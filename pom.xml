@@ -15,6 +15,7 @@
         <module>slave</module>
         <module>web</module>
         <module>monitor</module>
+        <module>agent-pool</module>
     </modules>
 
     <properties>
