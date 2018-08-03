@@ -53,9 +53,10 @@ public class TaskModel implements Serializable {
         this.taskSubmitAddresses = taskSubmitAddresses;
     }
 
-    public TaskModel(String taskName, String taskPlateIds, String taskGetAddresses, String taskSubmitAddresses) {
+    public TaskModel(String taskName, String taskPlateIds, String taskDescribe, String taskGetAddresses, String taskSubmitAddresses) {
         this.taskName = taskName;
         this.taskPlateIds = taskPlateIds;
+        this.taskDescribe = taskDescribe;
         this.taskGetAddresses = taskGetAddresses;
         this.taskSubmitAddresses = taskSubmitAddresses;
     }
