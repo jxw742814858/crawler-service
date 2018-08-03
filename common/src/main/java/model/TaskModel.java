@@ -8,6 +8,7 @@ import java.io.Serializable;
 public class TaskModel implements Serializable {
 
     private String taskName;
+    private String taskPlateIds;
     private String taskDescribe;
     private String taskGetAddresses;
     private String taskSubmitAddresses;
@@ -18,6 +19,14 @@ public class TaskModel implements Serializable {
 
     public void setTaskName(String taskName) {
         this.taskName = taskName;
+    }
+
+    public String getTaskPlateIds() {
+        return taskPlateIds;
+    }
+
+    public void setTaskPlateIds(String taskPlateIds) {
+        this.taskPlateIds = taskPlateIds;
     }
 
     public String getTaskDescribe() {
@@ -44,9 +53,9 @@ public class TaskModel implements Serializable {
         this.taskSubmitAddresses = taskSubmitAddresses;
     }
 
-    public TaskModel(String taskName, String taskDescribe, String taskGetAddresses, String taskSubmitAddresses) {
+    public TaskModel(String taskName, String taskPlateIds, String taskGetAddresses, String taskSubmitAddresses) {
         this.taskName = taskName;
-        this.taskDescribe = taskDescribe;
+        this.taskPlateIds = taskPlateIds;
         this.taskGetAddresses = taskGetAddresses;
         this.taskSubmitAddresses = taskSubmitAddresses;
     }

@@ -14,17 +14,16 @@ public class HttpConst {
     public static final int PROTOCOL_HTTPS_PORT = 443;
 
     public static final int CONNECT_TIMEOUT = 5000;
+    public static final int RETRY_COUNT = 3;
 
     public static final String HEADER_USERAGENT_KEY = "User-Agent";
-    public static final String HEADER_USERAGENT_VALUE =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0";
+    public static final String HEADER_USERAGENT_VALUE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0";
 
     public static final String HEADER_ACCEPT_KEY = "Accept";
     public static final String HEADER_ACCEPT_VALUE = "*/*";
 
     public static final String HEADER_ACCEPT_LANGUAGE_KEY = "Accept-Language";
-    public static final String HEADER_ACCEPT_LANGUAGE_VALUE =
-            "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2";
+    public static final String HEADER_ACCEPT_LANGUAGE_VALUE = "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2";
 
     public static final String HEADER_CONNECTION_KEY = "Connection";
     public static final String HEADER_CONNECTION_VALUE = "keep-alive";

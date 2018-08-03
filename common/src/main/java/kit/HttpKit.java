@@ -14,7 +14,9 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.*;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,28 +27,61 @@ import java.util.Map;
 public class HttpKit {
     private static Logger log = LoggerFactory.getLogger(HttpKit.class);
 
-    public static HttpEntity get(String url) {
-        return baseRequest(url, null, null, null, HttpConst.REQUEST_METHOD_GET);
+    public static HttpEntity get(String url) throws Exception {
+        return requestRetry(url, null, null);
     }
 
-    public static HttpEntity get(String url, ProxyEntity proxy) {
-        return baseRequest(url, null, proxy, null, HttpConst.REQUEST_METHOD_GET);
+    public static HttpEntity get(String url, ProxyEntity proxy) throws Exception {
+        return requestRetry(url, proxy, null);
     }
 
-    public static HttpEntity get(String url, ProxyEntity proxy, Map<String, String> header) {
-        return baseRequest(url, null, proxy, header, HttpConst.REQUEST_METHOD_GET);
+    public static HttpEntity get(String url, ProxyEntity proxy, Map<String, String> header) throws Exception {
+        return requestRetry(url, proxy, header);
     }
 
-    public static HttpEntity post(String url, String dataStr, Map<String, String> header) {
+    public static HttpEntity post(String url, String dataStr, Map<String, String> header) throws Exception {
         return baseRequest(url, dataStr, null, header, HttpConst.REQUEST_METHOD_POST);
     }
 
-    public static HttpEntity post(String url, String dataStr, Map<String, String> header, ProxyEntity proxy) {
+    public static HttpEntity post(String url, String dataStr, Map<String, String> header, ProxyEntity proxy)
+            throws Exception {
         return baseRequest(url, dataStr, proxy, header, HttpConst.REQUEST_METHOD_POST);
     }
 
+    /**
+     * get请求目标url重试封装
+     *
+     * @param url
+     * @param proxy
+     * @param header
+     * @return
+     * @throws Exception
+     */
+    private static HttpEntity requestRetry(String url, ProxyEntity proxy, Map<String, String> header) throws Exception {
+        HttpEntity entity = null;
+        for (int i = 0; i < HttpConst.RETRY_COUNT; i++) {
+            try {
+                entity = baseRequest(url, null, proxy, header, HttpConst.REQUEST_METHOD_GET);
+                if (entity != null && entity.getRespCode() >= 200 && entity.getRespCode() < 300) {
+                    return entity;
+                }
+            } catch (Exception e) {
+                if (i == HttpConst.RETRY_COUNT - 1) {
+                    StringBuffer buffer = new StringBuffer(String.format("Target URL attempt %d requests failure, " +
+                            "url: %s, error message: %s", HttpConst.RETRY_COUNT, url, e.getMessage()));
+                    if (entity != null) {
+                        buffer.append(" , response code: ").append(entity.getRespCode());
+                    }
+                    throw new Exception(buffer.toString());
+                }
+            }
+        }
+
+        return null;
+    }
+
     private static HttpEntity baseRequest(String url, String dataStr, ProxyEntity proxy, Map<String, String> header,
-                                          String requestType) {
+                                          String requestType) throws Exception {
         if (url == null || url.trim().length() == 0) {
             return null;
         }
@@ -54,7 +89,6 @@ public class HttpKit {
         RequestConfig requestConfig = null;
         HttpClientContext httpClientContext = null;
         CloseableHttpResponse httpResponse = null;
-        HttpEntity entity = null;
 
         // 判断url, 得到域名、端口、协议类型
         String domain = null, protocol = null;
@@ -68,6 +102,7 @@ public class HttpKit {
             port = HttpConst.PROTOCOL_HTTP_PORT;
             protocol = HttpConst.PROTOCOL_HTTP_HEAD;
         }
+        // 一级域名截取
         if (domain.contains("/")) {
             domain = domain.substring(0, domain.indexOf("/"));
         }
@@ -77,23 +112,19 @@ public class HttpKit {
 
         // 使用代理请求
         if (proxy != null) {
-            try {
-                // 创建认证
-                credsProvider = new BasicCredentialsProvider();
-                credsProvider.setCredentials(new AuthScope(proxy.getHost(), proxy.getPort()),
-                        new UsernamePasswordCredentials(proxy.getAgentAccount(), proxy.getAgentPassword()));
+            // 创建认证
+            credsProvider = new BasicCredentialsProvider();
+            credsProvider.setCredentials(new AuthScope(proxy.getHost(), proxy.getPort()),
+                    new UsernamePasswordCredentials(proxy.getAgentAccount(), proxy.getAgentPassword()));
 
-                HttpHost httpHost = new HttpHost(proxy.getHost(), proxy.getPort());
-                requestConfig = RequestConfig.custom()
-                        .setConnectTimeout(HttpConst.CONNECT_TIMEOUT)   // 设置连接超时时间
-                        .setConnectionRequestTimeout(HttpConst.CONNECT_TIMEOUT) // 设置请求超时时间
-                        .setSocketTimeout(HttpConst.CONNECT_TIMEOUT)
-                        .setRedirectsEnabled(true)  // 默认允许自动重定向
-                        .setProxy(httpHost)
-                        .build();
-            } catch (Exception e) {
-                log.error("", e);
-            }
+            HttpHost httpHost = new HttpHost(proxy.getHost(), proxy.getPort());
+            requestConfig = RequestConfig.custom()
+                    .setConnectTimeout(HttpConst.CONNECT_TIMEOUT)   // 设置连接超时时间
+                    .setConnectionRequestTimeout(HttpConst.CONNECT_TIMEOUT) // 设置请求超时时间
+                    .setSocketTimeout(HttpConst.CONNECT_TIMEOUT)
+                    .setRedirectsEnabled(true)  // 默认允许自动重定向
+                    .setProxy(httpHost)
+                    .build();
         } else {
             requestConfig = RequestConfig.custom()
                     .setConnectTimeout(HttpConst.CONNECT_TIMEOUT)
@@ -150,10 +181,10 @@ public class HttpKit {
 
             String html = EntityUtils.toString(httpResponse.getEntity());
             Integer respCode = httpResponse.getStatusLine().getStatusCode();
-            entity = new HttpEntity(html, respCode);
+            HttpEntity entity = new HttpEntity(html, respCode);
             return entity;
         } catch (IOException e) {
-            log.error("", e);
+            throw new IOException(e.getMessage());
         } finally {
             if (httpResponse != null) {
                 httpResponse = null;
@@ -164,7 +195,12 @@ public class HttpKit {
             if (httpClientContext != null) {
                 httpClientContext = null;
             }
+            if (proxy != null) {
+                proxy = null;
+            }
+            if (header != null) {
+                header.clear();
+            }
         }
-        return null;
     }
 }
