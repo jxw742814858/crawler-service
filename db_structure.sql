@@ -45,7 +45,7 @@ CREATE TABLE `site_info` (
 CREATE TABLE `task_info` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `task_name` varchar(32) NOT NULL COMMENT '任务名',
-  `task_ids` text NOT NULL COMMENT '任务版块id集合',
+  `task_plate_ids` text NOT NULL COMMENT '任务版块id集合',
   `task_describe` varchar(64) DEFAULT NULL COMMENT '任务描述',
   `task_get_addresses` varchar(128) NOT NULL COMMENT '从节点取任务地址',
   `task_submit_addresses` varchar(128) NOT NULL COMMENT '数据提交地址',
