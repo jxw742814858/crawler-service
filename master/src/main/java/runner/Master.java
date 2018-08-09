@@ -36,6 +36,10 @@ public class Master extends ThreadPool implements ApplicationRunner {
     public void run(ApplicationArguments applicationArguments) {
 
         programStartTime = System.currentTimeMillis();
+        try {
+            Thread.sleep(1000 * 3);
+        } catch (InterruptedException e) {
+        }
 
         threadPool.scheduleAtFixedRate(() -> {
             // 不在等待间隔中时， 执行检测任务
@@ -43,13 +47,13 @@ public class Master extends ThreadPool implements ApplicationRunner {
                 getTaskSize();
 
                 // 任务队列为空
-                if (taskSize == 0L) {
+                if (taskSize == 0) {
                     waitStatus = true;
                     log.info("The last task queue is completed, and now the next task is written.",
                             execInterval);
 
                     // 首次执行任务 且 任务队列为空时，无需等待即刻执行，否则休眠间隔时间后执行
-                    if (System.currentTimeMillis() - programStartTime > 1000 * 60 * 2) {
+                    if (System.currentTimeMillis() - programStartTime > 1000 * 60) {
                         log.info("The last task queue is completed, and the next task will be written in {} minutes.",
                                 execInterval);
                         try {
@@ -61,16 +65,16 @@ public class Master extends ThreadPool implements ApplicationRunner {
 
                     // 获取mysql任务
                     if (loadLastestTask()) {
-                        log.info("Get the task successfully, size: {}", tasks.size());
+                        log.info("Get mysql task successfully, size: {}", tasks.size());
                     } else {
-                        log.info("Get task failure");
+                        log.info("Get mysql task failure");
                     }
 
                     //写入任务到redis
                     if (writeSwapTask()) {
-                        log.info("The task is written successfully.");
+                        log.info("Task writing to redis success.");
                     } else {
-                        log.info("Task write failure.");
+                        log.info("Task write to redis failure");
                     }
                 }
             }
@@ -103,9 +107,8 @@ public class Master extends ThreadPool implements ApplicationRunner {
      * @return true 成功 false 失败
      */
     private boolean writeSwapTask() {
-        List<TaskEntity> swapRecords = taskImpl.batchConvert(tasks);
         try {
-            redisImpl.batchInsert(swapRecords);
+            redisImpl.batchInsert(tasks);
             return true;
         } catch (Exception e) {
             log.error("", e);

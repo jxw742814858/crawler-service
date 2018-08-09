@@ -11,6 +11,4 @@ public interface TaskFoctory {
      * @return
      */
     List<TaskEntity> loadTasks();
-
-    List<TaskEntity> batchConvert(List<TaskEntity> tasks);
 }

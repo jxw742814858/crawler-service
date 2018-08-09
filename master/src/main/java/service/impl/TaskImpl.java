@@ -29,10 +29,4 @@ public class TaskImpl implements TaskFoctory {
         }
         return tasks;
     }
-
-    @Override
-    public List<TaskEntity> batchConvert(List<TaskEntity> tasks) {
-
-        return null;
-    }
 }

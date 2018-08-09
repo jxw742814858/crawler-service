@@ -6,7 +6,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class ThreadPool {
     public static ScheduledExecutorService threadPool;
 
-    public void ThreadPool() {
+    public ThreadPool() {
         threadPool = new ScheduledThreadPoolExecutor(10);
     }
 }

@@ -1,5 +1,6 @@
 package service.impl;
 
+import com.alibaba.fastjson.JSON;
 import constants.ExceptionConst;
 import entity.TaskEntity;
 import org.slf4j.Logger;
@@ -20,7 +21,7 @@ public class RedisImpl implements RedisFoctory {
     private Logger log = LoggerFactory.getLogger(RedisImpl.class);
 
     @Resource
-    RedisTemplate<Integer, TaskEntity> redisTemplate;
+    RedisTemplate<String, String> redisTemplate;
 
     @Override
     public Long getDbSize() throws Exception {
@@ -54,21 +55,42 @@ public class RedisImpl implements RedisFoctory {
     }
 
     @Override
-    public void batchInsert(List<TaskEntity> rules) throws Exception {
+    public void batchInsert(List<TaskEntity> tasks) throws Exception {
+        RedisSerializer<String> serializer = redisTemplate.getStringSerializer();
         try {
             redisTemplate.executePipelined(new RedisCallback<List<TaskEntity>>() {
                 @Override
                 public List<TaskEntity> doInRedis(RedisConnection redisConnection) throws DataAccessException {
-                    for (int i = 0, length = rules.size(); i < length; i++) {
-                        RedisSerializer<String> keySerializer = redisTemplate.getStringSerializer();
-                        RedisSerializer<TaskEntity> ruleSerializer = (RedisSerializer) redisTemplate.getDefaultSerializer();
-                        byte[] rawKey = keySerializer.serialize(String.valueOf(System.currentTimeMillis()));
-                        redisConnection.setEx(rawKey, 86400L, ruleSerializer.serialize(rules.get(i)));
+                    for (int i = 0, length = tasks.size(); i < length; i++) {
+                        // 拼接task_name + 时间戳作为任务记录的key
+                        byte[] rawKey = serializer.serialize(new StringBuffer(tasks.get(i).getTaskName())
+                                .append("-").append(System.currentTimeMillis()).toString());
+                        redisConnection.setEx(rawKey, 86400L, serializer.serialize(JSON.toJSONString(tasks.get(i))));
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                        }
                     }
 
                     return null;
                 }
             });
+        } catch (Exception e) {
+            throw new Exception(String.format(ExceptionConst.MSG_ERROR_DB, "generate redis task", e.getMessage()));
+        }
+    }
+
+    @Override
+    public void cyclicInsert(List<TaskEntity> tasks) throws Exception {
+        try {
+            for (int i = 0, length = tasks.size(); i < length; i++) {
+                redisTemplate.opsForValue().set(new StringBuffer(tasks.get(i).getTaskName()).append("-")
+                        .append(System.currentTimeMillis()).toString(), JSON.toJSONString(tasks.get(i)));
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                }
+            }
         } catch (Exception e) {
             throw new Exception(String.format(ExceptionConst.MSG_ERROR_DB, "generate redis task", e.getMessage()));
         }

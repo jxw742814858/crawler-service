@@ -11,4 +11,6 @@ public interface RedisFoctory {
     void flushDb() throws Exception;
 
     void batchInsert(List<TaskEntity> tasks) throws Exception;
+
+    void cyclicInsert(List<TaskEntity> tasks) throws Exception;
 }

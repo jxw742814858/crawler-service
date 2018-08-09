@@ -11,15 +11,15 @@ public class PropKit {
     private static Logger log = LoggerFactory.getLogger(PropKit.class);
 
     /**
-     * 获取properties 配置
+     * 获取properties 文件配置
      * @param fileName
      * @return
      */
     public static Properties getProp(String fileName) {
         Properties prop = new Properties();
         try {
-            InputStreamReader inputStreamReader = new InputStreamReader(PropKit.class.getResourceAsStream(fileName),
-                    "UTF-8");
+            InputStreamReader inputStreamReader = new InputStreamReader(PropKit.class.getClassLoader()
+                    .getResourceAsStream(fileName), "UTF-8");
             prop.load(inputStreamReader);
             return prop;
         } catch (IOException e) {
